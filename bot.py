@@ -9,6 +9,7 @@ class Bot:
     def __init__(self):
         self.distanceMatrix = None
         self.nextPort = None
+        self.curMove = 0
 
     def euclidianDistance(self, a: Position, b: Position):
         return math.sqrt((a.row - b.row)**2 + (a.column - b.column)**2)

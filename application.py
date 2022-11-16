@@ -1,9 +1,10 @@
 #!/usr/bin/env python
 
 import asyncio
-import os
-import websockets
 import json
+import os
+
+import websockets
 
 from bot import Bot
 from game_message import Tick
@@ -32,7 +33,9 @@ async def game_loop(websocket: websockets.WebSocketServerProtocol, bot: Bot):
             break
 
         game_message: Tick = Tick.from_dict(json.loads(message))
-        print(f"Playing tick {game_message.currentTick} of {game_message.totalTicks}")
+        print(
+            f"Playing tick {game_message.currentTick} of {game_message.totalTicks}")
+        print(bot.distanceMatrix)
 
         payload = {
             "type": "COMMAND",
