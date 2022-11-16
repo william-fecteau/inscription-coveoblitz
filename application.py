@@ -35,7 +35,6 @@ async def game_loop(websocket: websockets.WebSocketServerProtocol, bot: Bot):
         game_message: Tick = Tick.from_dict(json.loads(message))
         print(
             f"Playing tick {game_message.currentTick} of {game_message.totalTicks}")
-        print(bot.distanceMatrix)
 
         payload = {
             "type": "COMMAND",

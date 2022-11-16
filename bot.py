@@ -1,6 +1,7 @@
 import math
 from typing import List, Union
 
+import astar
 from game_message import (Action, Anchor, Dock, Position, Sail, Spawn, Tick,
                           directions)
 
@@ -9,6 +10,7 @@ class Bot:
     def __init__(self):
         self.distanceMatrix = None
         self.nextPort = None
+        self.maze = None
         self.curMove = 0
 
     def euclidianDistance(self, a: Position, b: Position):
@@ -23,6 +25,45 @@ class Bot:
             distanceMatrix.append(row)
 
         return distanceMatrix
+
+    def buildMazeMatrix(self, tick: Tick):
+        maxTide = tick.map.tideLevels.max
+
+        maze = []
+        for i in range(len(tick.map.topology)):
+            row = []
+            for j in range(len(tick.map.topology[i])):
+                if tick.map.topology[i][j] >= maxTide:
+                    row.append(1)
+                else:
+                    row.append(0)
+            maze.append(row)
+
+        print(*maze, sep='\n')
+        return maze
+
+    def computeDirection(self, positionA, positionB):
+        dy = positionB[0] - positionA[0]
+        dx = positionB[1] - positionA[1]
+
+        if dx == 0 and dy < 0:
+            return "N"
+        if dx > 0 and dy < 0:
+            return "NE"
+        if dx > 0 and dy == 0:
+            return "E"
+        if dx > 0 and dy > 0:
+            return "SE"
+        if dx == 0 and dy > 0:
+            return "S"
+        if dx < 0 and dy > 0:
+            return "SW"
+        if dx < 0 and dy == 0:
+            return "W"
+        if dx < 0 and dy < 0:
+            return "NW"
+
+        return "lol"
 
     def getClosestPort(self, tick: Tick, indexPort: int):
         row = self.distanceMatrix[indexPort]
@@ -41,6 +82,7 @@ class Bot:
 
         if self.distanceMatrix is None:
             self.distanceMatrix = self.buildDistanceMatrix(tick)
+            self.maze = self.buildMazeMatrix(tick)
 
             self.nextPort = 0
             port = ports[self.nextPort]
@@ -53,19 +95,21 @@ class Bot:
                 # We have visited all ports, go back to the first one TODO: change for something else than 0
                 self.nextPort = 0
 
-            print("LOL JE DOCKER ICI")
+            self.oldLocation = tick.currentLocation
+            port = ports[self.nextPort]
+            self.path = astar.astar(
+                self.maze, (tick.currentLocation.row, tick.currentLocation.column), (port.row, port.column))
+            print(self.path)
+            self.moi = 0
+
             return Dock()
 
-        # return Sail(direction="N")
-        # If we are not at a port, we need to sail to the next port
-        port = ports[self.nextPort]
-        if port.row > tick.currentLocation.row:
-            return Sail(direction="S")
-        elif port.row < tick.currentLocation.row:
-            return Sail(direction="N")
-        elif port.column > tick.currentLocation.column:
-            return Sail(direction="E")
-        elif port.column < tick.currentLocation.column:
-            return Sail(direction="W")
+        if tick.currentLocation.row != self.oldLocation.row or tick.currentLocation.column != self.oldLocation.column:
+            self.moi += 1
 
-        return Sail(directions[tick.currentTick % len(directions)])
+        direction = self.computeDirection(
+            self.path[self.moi], self.path[self.moi + 1])
+        print(direction)
+        self.oldLocation = tick.currentLocation
+
+        return Sail(direction=direction)
